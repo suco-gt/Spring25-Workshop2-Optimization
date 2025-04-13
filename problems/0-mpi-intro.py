@@ -78,7 +78,21 @@ def pipping_at_the_northpole():
     has earned from sales. The worst performing elf WILl BE PIPPED. Help Santa 
     total up how much each elf has earned and find the elf that will be fired :)
     """
-    raise NotImplementedError
+    random.seed(42)
+    comm = None
+    rank = None
+    if rank != 0:
+        elf_earnings = [random.uniform(1, 4) for _ in random.randint(1,10)]
+    
+    # Calculate how much each elf has made
+    total_earned = float('inf')
+    if rank != 0:
+        total_earned = None
+
+    if rank == 0:
+        all_totals = None
+    
+    print(f"The elf that will be pipped is: {all_totals.index(min(all_totals))}")
 
 def elf_revolution():
     """

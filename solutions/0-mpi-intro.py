@@ -100,7 +100,21 @@ def santas_accounts():
     the elves helping him sell his sleighs. Get the total amount that
     Santa has made this week from all the sleighs that his elves has sold.
     """
-    raise NotImplementedError
+    random.seed(42)
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+    if rank != 0:
+        elf_earnings = [random.uniform(1, 4) for _ in random.randint(1,10)]
+    
+    total_earned = 0
+    if rank != 0:
+        total_earned = sum(elf_earnings)
+    
+    if rank == 0:
+        total = comm.reduce(total_earned, root=0, op=MPI.SUM)
+        
+    print(f"Santa has earned {total} amount of money!")
+    
 
 def pipping_at_the_northpole():
     """
