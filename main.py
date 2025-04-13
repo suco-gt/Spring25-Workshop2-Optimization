@@ -8,6 +8,7 @@ import math
 from solutions.bruteforce import bruteforce
 from solutions.spgemm import coo_spgemm, csr_spgemm
 from solutions.cannon import cannon_matrix_multiply
+from solutions.blocked import blocked_matrix_multiply
 
 def read_sparse_matrix_file(file):
     with open(file, 'r') as f:
@@ -95,8 +96,26 @@ def test_brute(num_nodes, A, B, expected_C):
     else:
         print(f"Expected: \n\t{expected_C}\n\nGot \n\t{my_C}")
 
-def test_tiling():
-    pass
+def test_blocked(A, B, expected_C):
+    start = time.perf_counter()
+    
+    if rank == 0:
+        N = A.shape[0]
+    else:
+        N = None
+    N = comm.bcast(N, root=0)
+    my_C = blocked_matrix_multiply(A, B, N)
+
+    end = time.perf_counter()
+
+    if rank == 0:
+        if np.array_equal(my_C, expected_C):
+            print("Result matrix matches!")
+        else:
+            print("Result matrix does not match.")
+    if rank == 0:
+        print(f"Time Taken for multiplying matrices of size ({num_nodes} x {num_nodes}): {end - start:0.4f} seconds")
+
 
 def test_cannon(A, B, expected_C):
     start = time.perf_counter()
@@ -178,8 +197,16 @@ if __name__=="__main__":
     if args.optim == "brute":
         if rank == 0: test_brute(num_nodes, square_matrix_A, square_matrix_A_transpose, square_spgemm_result) 
 
-    elif args.optim == "tiling":
-        pass
+    elif args.optim == "blocked":
+        if rank != 0:
+            square_matrix_A = None
+            square_matrix_A_transpose = None
+            square_spgemm_result = None
+        else:
+            square_matrix_A = pad_matrix(square_matrix_A, int(np.sqrt(size)))
+            square_matrix_A_transpose = pad_matrix(square_matrix_A_transpose, int(np.sqrt(size)))
+            square_spgemm_result = pad_matrix(square_spgemm_result, int(np.sqrt(size)))
+        test_blocked(square_matrix_A, square_matrix_A_transpose, square_spgemm_result)
 
     elif args.optim == "cannon":
         if rank != 0:

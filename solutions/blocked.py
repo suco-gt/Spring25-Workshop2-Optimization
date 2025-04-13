@@ -1,7 +1,9 @@
 from mpi4py import MPI
 import numpy as np
 
-def blocked_matrix_multiply(A, B, comm, N):
+def blocked_matrix_multiply(A, B, N):
+    comm = MPI.COMM_WORLD
+
     rank = comm.Get_rank()
     size = comm.Get_size()
 
@@ -73,10 +75,10 @@ def blocked_matrix_multiply(A, B, comm, N):
         local_C += np.dot(row_A_blocks[k], col_B_blocks[k])
 
     # Gather C at the root
-    gathered_C = None
+    collected_C = None
     if cart_rank == 0:
-        gathered_C = np.empty((size, block_size, block_size), dtype=local_C.dtype)
-    comm_cart.Gather(local_C, gathered_C, root=0)
+        collected_C = np.empty((size, block_size, block_size), dtype=local_C.dtype)
+    comm_cart.Gather(local_C, collected_C, root=0)
 
     if cart_rank == 0:
         # Reassemble the full result matrix from gathered blocks.
@@ -84,26 +86,7 @@ def blocked_matrix_multiply(A, B, comm, N):
         idx = 0
         for i in range(q):
             for j in range(q):
-                result[i*block_size:(i+1)*block_size, j*block_size:(j+1)*block_size] = gathered_C[idx]
+                result[i*block_size:(i+1)*block_size, j*block_size:(j+1)*block_size] = collected_C[idx]
                 idx += 1
         return result
     return None
-
-
-if __name__ == "__main__":
-    comm = MPI.COMM_WORLD
-    rank = comm.Get_rank()
-
-    N = 64  # Example matrix size, must be divisible by sqrt(processes)
-
-    if rank == 0:
-        A = np.tile(np.arange(1, N+1), (N, 1))
-        B = np.tile(np.arange(1, N+1).reshape(N, 1), (1, N))
-    else:
-        A = None
-        B = None
-
-    result = blocked_matrix_multiply(A, B, comm, N)
-
-    # if rank == 0:
-    #     print("Result matrix:\n", result)

@@ -22,3 +22,8 @@ if [ "$1" == "cannon" ]; then
     mpiexec -n "$SLURM_NTASKS_PER_NODE" python main.py -f tests/input.txt -o cannon
     mpiexec -n "$SLURM_NTASKS_PER_NODE" python main.py -f tests/input1.txt -o cannon
 fi
+
+if [ "$1" == "blocked" ]; then
+    mpiexec -n "$SLURM_NTASKS_PER_NODE" python main.py -f tests/input.txt -o blocked
+    mpiexec -n "$SLURM_NTASKS_PER_NODE" python main.py -f tests/input1.txt -o blocked
+fi
