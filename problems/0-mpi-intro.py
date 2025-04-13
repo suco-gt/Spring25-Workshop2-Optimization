@@ -93,6 +93,7 @@ def elf_revolution():
     comm = None
     rank = None
     elf_earnings = [random.uniform(1, 4) for _ in random.randint(1,10)] 
+    total_earned = None
     all_totals = None
     print(f"Elf {rank} has {all_totals} amount of money! Viva la revolution!")
 
