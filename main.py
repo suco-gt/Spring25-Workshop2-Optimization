@@ -47,8 +47,71 @@ def convert_to_matrix(num_nodes, edge_list):
         square_matrix[row][col] = w
     return square_matrix
 
-def distribute_coo(edge_list):
+def distribute_matrix(matrix):
     raise NotImplementedError
+
+def distribute_coo(edge_list):
+    a_send_rows =  np.zeros((size,))
+    a_send_indices =  np.zeros((size + 1,))
+    a_rows_to_rank = np.zeros((data[0],))
+
+    a_send_data = [ [] for _ in range(size) ]
+
+    for i in range(size):
+        a_send_rows[i] = data[0] // size
+        if data[0] % size > i:
+            a_send_rows[i] += 1
+    
+    if rank == 0:
+        a_send_indices[0] = 0
+        for i in range(1, size + 1):
+            a_send_indices[i] = a_send_indices[i - 1] + a_send_rows[i - 1]
+        for i in range(size):
+            for j in range(int(a_send_indices[i]), int(a_send_indices[i + 1])):
+                a_rows_to_rank[j] = i
+        a_rows_to_rank = a_rows_to_rank.astype(int) 
+        for A_el in edge_list:
+            a_send_data[a_rows_to_rank[A_el[0]]].append(A_el)
+
+    return a_send_data
+
+
+def test_brute(num_nodes, A, B, expected_C):
+    my_C = np.array(bruteforce(num_nodes, num_nodes, num_nodes, A, B))
+    if np.array_equal(my_C, expected_C):
+        print("Resulting matrices match!")
+    else:
+        print(f"Expected: \n\t{expected_C}\n\nGot \n\t{my_C}")
+
+def test_tiling():
+    pass
+
+def test_cannon():
+    pass
+
+def test_spgemm(A, B, expected_C, kind=1):
+    if rank == 0:
+        a_send_data = distribute_coo(A)
+        b_send_data = distribute_coo(B)
+        c_send_data = distribute_coo(expected_C)
+    else:
+        a_send_data, b_send_data, c_send_data = None, None, None
+    
+    a_data_recvbuf = comm.scatter(a_send_data, root=0)
+    b_data_recvbuf = comm.scatter(b_send_data, root=0)
+    c_data_recvbuf = comm.scatter(c_send_data, root=0)
+
+    start = time.perf_counter()
+    if kind == 1:
+        my_C = coo_spgemm(num_nodes, num_nodes, num_nodes, a_data_recvbuf, b_data_recvbuf)
+    else:
+        my_C = csr_spgemm(num_nodes, num_nodes, num_nodes, a_data_recvbuf, b_data_recvbuf)
+    end = time.perf_counter()
+
+    if rank == 0:
+        print(f"Time Taken for multiplying matrices of size ({num_nodes} x {num_nodes}): {end - start:0.4f} seconds")
+        print(my_C)
+
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser(prog='Driver code')
@@ -61,7 +124,7 @@ if __name__=="__main__":
     rank = comm.Get_rank()
 
     num_nodes, src_node, num_edges = 0, 0, 0
-    edge_list, spgemm_result = None, None
+    edge_list, spgemm_result = None, []
     if rank == 0:
         num_nodes, src_node, num_edges, edge_list, spgemm_result = read_sparse_matrix_file(args.file)
         data = (num_nodes, src_node, num_edges)
@@ -69,9 +132,9 @@ if __name__=="__main__":
         data = None
     data = comm.bcast(data, root=0)
 
+    matrix_A = []
+    matrix_A_transpose = []    
     if rank == 0:
-        matrix_A = []
-        matrix_A_transpose = []
         for edge in edge_list:
             edge.append(1)
             matrix_A.append(edge)
@@ -83,89 +146,26 @@ if __name__=="__main__":
         square_matrix_A_transpose = convert_to_matrix(num_nodes, matrix_A_transpose)
         square_spgemm_result = convert_to_matrix(num_nodes, spgemm_result)
 
-
     if args.optim == "brute":
-        if rank == 0:
-            my_C = np.array(bruteforce(num_nodes, num_nodes, num_nodes, square_matrix_A, square_matrix_A_transpose))
-            if np.array_equal(my_C, square_spgemm_result):
-                print("Resulting matrices match!")
-            else:
-                print(f"Expected: \n\t{square_spgemm_result}\n\nGot \n\t{my_C}")
+        if rank == 0: test_brute(num_nodes, square_matrix_A, square_matrix_A_transpose, square_spgemm_result) 
+
     elif args.optim == "tiling":
         pass
+
     elif args.optim == "cannon":
         pass
+
     elif args.optim == "spgemm1":
-        pass
+        test_spgemm(matrix_A, matrix_A_transpose, spgemm_result, kind=1)
+
     elif args.optim == "spgemm2":
-        pass
+        test_spgemm(matrix_A, matrix_A_transpose, spgemm_result, kind=2)
+
     else:
         print("Invalid optimization method selected.")
+
     
 
-    # a_send_rows =  np.zeros((size,))
-    # b_send_rows =  np.zeros((size,))
-    # a_send_indices =  np.zeros((size + 1,))
-    # b_send_indices =  np.zeros((size + 1,))
-    # c_send_rows =  np.zeros((size,))
-    # c_send_indices =  np.zeros((size + 1,))
-    # a_rows_to_rank = np.zeros((data[0],))
-    # b_rows_to_rank =  np.zeros((data[0],))
-    # c_rows_to_rank =  np.zeros((data[0],))
-
-    # a_send_counts = np.zeros((size,))
-    # b_send_counts = np.zeros((size,))
-    # c_send_counts = np.zeros((size,))
-    # a_send_data, b_send_data, c_send_data = [ [] for _ in range(size) ], [ [] for _ in range(size) ], [ [] for _ in range(size) ]
-
-    # for i in range(size):
-    #     a_send_rows[i] = data[0] // size
-    #     b_send_rows[i] = data[0] // size
-    #     c_send_rows[i] = data[0] // size
-    #     if data[0] % size > i:
-    #         a_send_rows[i] += 1
-    #         b_send_rows[i] += 1
-    #         c_send_rows[i] += 1
     
-    # if rank == 0:
-    #     a_send_indices[0] = 0
-    #     b_send_indices[0] = 0
-    #     c_send_indices[0] = 0
 
-    #     for i in range(1, size + 1):
-    #         a_send_indices[i] = a_send_indices[i - 1] + a_send_rows[i - 1]
-    #         b_send_indices[i] = b_send_indices[i - 1] + b_send_rows[i - 1]
-    #         c_send_indices[i] = c_send_indices[i - 1] + c_send_rows[i - 1]
-        
-    #     for i in range(size):
-    #         for j in range(int(a_send_indices[i]), int(a_send_indices[i + 1])):
-    #             a_rows_to_rank[j] = i
-    #         for j in range(int(b_send_indices[i]), int(b_send_indices[i + 1])):
-    #             b_rows_to_rank[j] = i
-    #         for j in range(int(c_send_indices[i]), int(c_send_indices[i + 1])):
-    #             c_rows_to_rank[j] = i
-
-    #     a_rows_to_rank = a_rows_to_rank.astype(int) 
-    #     b_rows_to_rank = b_rows_to_rank.astype(int) 
-    #     c_rows_to_rank = c_rows_to_rank.astype(int)
-
-    #     for idx, A_el in enumerate(matrix_A):
-    #         a_send_data[a_rows_to_rank[A_el[0]]].append(A_el)
-        
-    #     for idx, A_t_el in enumerate(matrix_A_transpose):
-    #         b_send_data[b_rows_to_rank[A_t_el[0]]].append(A_t_el)
-
-    #     for idx, res_el in enumerate(spgemm_result):
-    #         c_send_data[c_rows_to_rank[res_el[0]]].append(res_el)
-
-    # a_data_recvbuf = comm.scatter(a_send_data, root=0)
-    # b_data_recvbuf = comm.scatter(b_send_data, root=0)
-    # c_data_recvbuf = comm.scatter(c_send_data, root=0)
-
-    # start = time.perf_counter()
-    # C_computed = coo_spgemm(num_nodes, num_nodes, num_nodes, a_data_recvbuf, b_data_recvbuf)
-    # end = time.perf_counter()
-
-    # if rank == 0:
-    #     print(f"Time Taken for multiplying matrices of size ({num_nodes} x {num_nodes}): {end - start:0.4f} seconds")
-    #     print(C_computed)
+    
