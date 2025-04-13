@@ -208,14 +208,15 @@ if __name__=="__main__":
         square_matrix_A_transpose = convert_to_matrix(num_nodes, matrix_A_transpose)
         square_spgemm_result = convert_to_matrix(num_nodes, spgemm_result)
 
+
     if args.optim == "brute":
         if rank == 0:
-            print("=================================Testing Bruteforce Algorithm===============================")
+            print("\n=================================Testing Bruteforce Algorithm===============================")
             test_brute(num_nodes, square_matrix_A, square_matrix_A_transpose, square_spgemm_result) 
 
     elif args.optim == "blocked":
         if rank == 0:
-            print("====================Testing Blocked Matrix-Matrix Multiplication Algorithm==================")
+            print("\n====================Testing Blocked Matrix-Matrix Multiplication Algorithm==================")
         if rank != 0:
             square_matrix_A = None
             square_matrix_A_transpose = None
@@ -228,7 +229,7 @@ if __name__=="__main__":
 
     elif args.optim == "cannon":
         if rank == 0:
-            print("===================Testing Cannon's Matrix-Matrix Multiplication Algorithm=================")
+            print("\n===================Testing Cannon's Matrix-Matrix Multiplication Algorithm=================")
         if rank != 0:
             square_matrix_A = None
             square_matrix_A_transpose = None
@@ -240,12 +241,12 @@ if __name__=="__main__":
         test_cannon(square_matrix_A, square_matrix_A_transpose, square_spgemm_result)
     elif args.optim == "spgemm1":
         if rank == 0:
-            print("=================Testing Spgemm Matrix-Matrix Multiplication Algorithm w/ COO===============")
+            print("\n=================Testing Spgemm Matrix-Matrix Multiplication Algorithm w/ COO===============")
         test_spgemm(matrix_A, matrix_A_transpose, spgemm_result, kind=1)
 
     elif args.optim == "spgemm2":
         if rank == 0:
-            print("=================Testing Spgemm Matrix-Matrix Multiplication Algorithm w/ CSR===============")
+            print("\n=================Testing Spgemm Matrix-Matrix Multiplication Algorithm w/ CSR===============")
         test_spgemm(matrix_A, matrix_A_transpose, spgemm_result, kind=2)
 
     else:
