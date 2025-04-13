@@ -9,6 +9,7 @@ def coo_spgemm(m, h, n, A, B):
 
     # Get entire matrix B onto each processor
     fullB = comm.allgather(B)
+    fullB = [item for sublist in fullB for item in sublist]
 
     """
     Iterate through each row i with nonzero values in A:
@@ -20,6 +21,7 @@ def coo_spgemm(m, h, n, A, B):
                     else
                         c_{ij} += value
     """
+    
     matrix_A = dict()
     matrix_B = dict()
     for A_nnz in A:
@@ -27,14 +29,14 @@ def coo_spgemm(m, h, n, A, B):
             matrix_A[A_nnz[0]].append((A_nnz[1], A_nnz[2]))
         else:
             matrix_A[A_nnz[0]] = [(A_nnz[1], A_nnz[1])]
-    for B_nnz in B:
+    for B_nnz in fullB:
         if B_nnz[0] in matrix_B:
             matrix_B[B_nnz[0]].append((B_nnz[1], B_nnz[2]))
         else:
             matrix_B[B_nnz[0]] = [(B_nnz[1], B_nnz[1])]
 
     matrix_C = dict()
-    for keyA, valA in sorted(matrix_A.iteritems()):
+    for keyA, valA in sorted(matrix_A.items()):
         C_key = keyA
         for (k, wA) in valA:
             for (j, wB) in matrix_B[k]:
@@ -47,13 +49,10 @@ def coo_spgemm(m, h, n, A, B):
                             cij_val += val
     
     res = []
-    for keyC, valC in sorted(matrix_C.iteritems()):
+    for keyC, valC in sorted(matrix_C.items()):
         valC.sort(key=lambda tup: tup[0])
-        C_row = []
         for v in valC:
-            C_row.append([keyC, v[0], v[1]])
-        res.append(C_row)
-    print(res)
+            res.append([keyC, v[0], v[1]])
     return res
 
 

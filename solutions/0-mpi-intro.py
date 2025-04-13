@@ -22,9 +22,10 @@ def learn_about_the_world():
     """
     comm = MPI.COMM_WORLD
     world_size = comm.Get_size()
-    print(f"The size of the world is {world_size}")
     rank = comm.Get_rank()
-    print(f"Hello world from processor {rank}!\n")
+    if rank == 0:
+        print(f"The size of the world is {world_size}")
+    print(f"Hello world from processor {rank}!")
 
 
 def greetings_between_friends():
@@ -87,12 +88,12 @@ def santas_pipeline():
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
     data = rank
+    data = comm.gather(data, root=0)
     if rank == 0:
-        data = comm.gather(data, root=0)
-    if len(data) != comm.Get_size():
-        print(f"Boss elf is missing some parts! {data}")
-    else:
-        print(f"Boss elf got all the parts: {data} from {comm.Get_size()} elves!")
+        if len(data) != comm.Get_size():
+            print(f"Boss elf is missing some parts! {data}")
+        else:
+            print(f"Boss elf got all the parts: {data} from {comm.Get_size()} elves!")
 
 def santas_accounts():
     """
@@ -104,14 +105,14 @@ def santas_accounts():
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
     if rank != 0:
-        elf_earnings = [random.uniform(1, 4) for _ in random.randint(1,10)]
+        elf_earnings = [random.uniform(1, 4) for _ in range(random.randint(1,10))]
     
     total_earned = 0
     if rank != 0:
         total_earned = sum(elf_earnings)
     
+    total = comm.reduce(total_earned, root=0, op=MPI.SUM)
     if rank == 0:
-        total = comm.reduce(total_earned, root=0, op=MPI.SUM)
         print(f"Santa has earned {total} amount of money!")
     
 
@@ -125,15 +126,15 @@ def pipping_at_the_northpole():
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
     if rank != 0:
-        elf_earnings = [random.uniform(1, 4) for _ in random.randint(1,10)]
+        elf_earnings = [random.uniform(1, 4) for _ in range(random.randint(1,10))]
     
     # Calculate how much each elf has made
     total_earned = float('inf')
     if rank != 0:
         total_earned = sum(elf_earnings)
-
+    
+    all_totals = comm.gather(total_earned, root=0)
     if rank == 0:
-        all_totals = comm.gather(total_earned, root=0)
         print(f"The elf that will be pipped is: {all_totals.index(min(all_totals))}")
 
 def elf_revolution():
@@ -148,18 +149,41 @@ def elf_revolution():
     random.seed(42)
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
-    elf_earnings = [random.uniform(1, 4) for _ in random.randint(1,10)]
+    elf_earnings = [random.uniform(1, 4) for _ in range(random.randint(1,10))]
     total_earned = sum(elf_earnings)
-    all_totals = comm.allreduce(elf_earnings, op=MPI.SUM)
-    print(f"Elf {rank} has {all_totals} amount of money! Viva la revolution!")
+    all_totals = comm.allreduce(total_earned, op=MPI.SUM)
+    print(f"Elf {rank} has {all_totals:.2f} amount of money! Viva la revolution!")
 
 
 if __name__=="__main__":
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
     learn_about_the_world()
+    if rank == 0: print()
+    comm.Barrier()
+    
     greetings_between_friends()
+    if rank == 0: print()
+    comm.Barrier()
+
     greetings_between_all_friends()
+    if rank == 0: print()
+    comm.Barrier()
+
     be_a_more_considerate_friend()
+    if rank == 0: print()
+    comm.Barrier()
+
     santas_pipeline()
+    if rank == 0: print()
+    comm.Barrier()
+
     santas_accounts()
+    if rank == 0: print()
+    comm.Barrier()
+
     pipping_at_the_northpole()
+    if rank == 0: print()
+    comm.Barrier()
+
     elf_revolution()

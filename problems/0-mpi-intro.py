@@ -1,4 +1,3 @@
-import mpi4py
 from mpi4py import MPI
 import random
 
@@ -87,12 +86,12 @@ def santas_pipeline():
     comm = None
     rank = None
     data = rank
+    all_data = None
     if rank == 0:
-        data = None
-    if len(data) != comm.Get_size():
-        print(f"Boss elf is missing some parts! {data}")
-    else:
-        print(f"Boss elf got all the parts: {data} from {comm.Get_size()} elves!")
+        if len(all_data) != comm.Get_size():
+            print(f"Boss elf is missing some parts! {all_data}")
+        else:
+            print(f"Boss elf got all the parts: {all_data} from {comm.Get_size()} elves!")
 
 def santas_accounts():
     """
@@ -104,14 +103,14 @@ def santas_accounts():
     comm = None
     rank = None
     if rank != 0:
-        elf_earnings = [random.uniform(1, 4) for _ in random.randint(1,10)]
+        elf_earnings = [random.uniform(1, 4) for _ in range(random.randint(1,10))]
     
     total_earned = 0
     if rank != 0:
         total_earned = None
     
+    total = None
     if rank == 0:
-        total = None
         print(f"Santa has earned {total} amount of money!")
 
 def pipping_at_the_northpole():
@@ -124,15 +123,15 @@ def pipping_at_the_northpole():
     comm = None
     rank = None
     if rank != 0:
-        elf_earnings = [random.uniform(1, 4) for _ in random.randint(1,10)]
+        elf_earnings = [random.uniform(1, 4) for _ in range(random.randint(1,10))]
     
     # Calculate how much each elf has made
     total_earned = float('inf')
     if rank != 0:
         total_earned = None
 
+    all_totals = None
     if rank == 0:
-        all_totals = None
         print(f"The elf that will be pipped is: {all_totals.index(min(all_totals))}")
 
 def elf_revolution():
@@ -147,17 +146,40 @@ def elf_revolution():
     random.seed(42)
     comm = None
     rank = None
-    elf_earnings = [random.uniform(1, 4) for _ in random.randint(1,10)] 
+    elf_earnings = [random.uniform(1, 4) for _ in range(random.randint(1,10))] 
     total_earned = None
     all_totals = None
     print(f"Elf {rank} has {all_totals} amount of money! Viva la revolution!")
 
 if __name__=="__main__":
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
     learn_about_the_world()
+    if rank == 0: print()
+    comm.Barrier()
+    
     greetings_between_friends()
+    if rank == 0: print()
+    comm.Barrier()
+
     greetings_between_all_friends()
+    if rank == 0: print()
+    comm.Barrier()
+
     be_a_more_considerate_friend()
+    if rank == 0: print()
+    comm.Barrier()
+
     santas_pipeline()
+    if rank == 0: print()
+    comm.Barrier()
+
     santas_accounts()
+    if rank == 0: print()
+    comm.Barrier()
+
     pipping_at_the_northpole()
+    if rank == 0: print()
+    comm.Barrier()
+
     elf_revolution()

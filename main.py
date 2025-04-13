@@ -35,6 +35,7 @@ def read_sparse_matrix_file(file):
                 spgemm_result.append([i, j, w])
     return num_nodes, src_node, num_edges, edge_list, spgemm_result
 
+
 def convert_to_matrix(num_nodes, edge_list):
     """
     Args:
@@ -60,8 +61,6 @@ def pad_matrix(matrix, q):
     padded_matrix = np.pad(matrix, ((0, new_n - n), (0, new_n - m)), mode='constant', constant_values=0)
     return padded_matrix
 
-def distribute_matrix(matrix):
-    raise NotImplementedError
 
 def distribute_coo(edge_list):
     a_send_rows =  np.zeros((size,))
@@ -90,11 +89,16 @@ def distribute_coo(edge_list):
 
 
 def test_brute(num_nodes, A, B, expected_C):
+    start = time.perf_counter()
     my_C = np.array(bruteforce(num_nodes, num_nodes, num_nodes, A, B))
+    end = time.perf_counter()
     if np.array_equal(my_C, expected_C):
         print("Resulting matrices match!")
     else:
-        print(f"Expected: \n\t{expected_C}\n\nGot \n\t{my_C}")
+        print(f"\nExpected: \n\t{expected_C}\n\nGot: \n\t{my_C}\n")
+    if rank == 0:
+        print(f"Time Taken for multiplying matrices of size ({num_nodes} x {num_nodes}): {end - start:0.4f} seconds") 
+
 
 def test_blocked(A, B, expected_C):
     start = time.perf_counter()
@@ -112,7 +116,7 @@ def test_blocked(A, B, expected_C):
         if np.array_equal(my_C, expected_C):
             print("Result matrix matches!")
         else:
-            print("Result matrix does not match.")
+            print(f"\nExpected: \n\t{expected_C}\n\nGot: \n\t{my_C}\n")
     if rank == 0:
         print(f"Time Taken for multiplying matrices of size ({num_nodes} x {num_nodes}): {end - start:0.4f} seconds")
 
@@ -133,9 +137,10 @@ def test_cannon(A, B, expected_C):
         if np.array_equal(my_C, expected_C):
             print("Result matrix matches!")
         else:
-            print("Result matrix does not match.")
+            print(f"\nExpected: \n\t{expected_C}\n\nGot: \n\t{my_C}\n")
     if rank == 0:
         print(f"Time Taken for multiplying matrices of size ({num_nodes} x {num_nodes}): {end - start:0.4f} seconds")
+
 
 def test_spgemm(A, B, expected_C, kind=1):
     if rank == 0:
@@ -152,13 +157,22 @@ def test_spgemm(A, B, expected_C, kind=1):
     start = time.perf_counter()
     if kind == 1:
         my_C = coo_spgemm(num_nodes, num_nodes, num_nodes, a_data_recvbuf, b_data_recvbuf)
+        my_C = comm.gather(my_C, root=0)
+        if rank == 0:
+            my_C = [item for sublist in my_C for item in sublist]
     else:
         my_C = csr_spgemm(num_nodes, num_nodes, num_nodes, a_data_recvbuf, b_data_recvbuf)
+        my_C = comm.gather(my_C, root=0)
+        if rank == 0:
+            my_C = [item for sublist in my_C for item in sublist]
     end = time.perf_counter()
 
     if rank == 0:
         print(f"Time Taken for multiplying matrices of size ({num_nodes} x {num_nodes}): {end - start:0.4f} seconds")
-        print(my_C)
+        if my_C == expected_C:
+            print("Result matrix matches!")
+        else:
+            print(f"Expected: \n\n{expected_C}\n\nGot: \n\n{my_C}\n")
 
 
 if __name__=="__main__":
@@ -195,9 +209,13 @@ if __name__=="__main__":
         square_spgemm_result = convert_to_matrix(num_nodes, spgemm_result)
 
     if args.optim == "brute":
-        if rank == 0: test_brute(num_nodes, square_matrix_A, square_matrix_A_transpose, square_spgemm_result) 
+        if rank == 0:
+            print("=================================Testing Bruteforce Algorithm===============================")
+            test_brute(num_nodes, square_matrix_A, square_matrix_A_transpose, square_spgemm_result) 
 
     elif args.optim == "blocked":
+        if rank == 0:
+            print("====================Testing Blocked Matrix-Matrix Multiplication Algorithm==================")
         if rank != 0:
             square_matrix_A = None
             square_matrix_A_transpose = None
@@ -209,6 +227,8 @@ if __name__=="__main__":
         test_blocked(square_matrix_A, square_matrix_A_transpose, square_spgemm_result)
 
     elif args.optim == "cannon":
+        if rank == 0:
+            print("===================Testing Cannon's Matrix-Matrix Multiplication Algorithm=================")
         if rank != 0:
             square_matrix_A = None
             square_matrix_A_transpose = None
@@ -219,9 +239,13 @@ if __name__=="__main__":
             square_spgemm_result = pad_matrix(square_spgemm_result, int(np.sqrt(size)))
         test_cannon(square_matrix_A, square_matrix_A_transpose, square_spgemm_result)
     elif args.optim == "spgemm1":
+        if rank == 0:
+            print("=================Testing Spgemm Matrix-Matrix Multiplication Algorithm w/ COO===============")
         test_spgemm(matrix_A, matrix_A_transpose, spgemm_result, kind=1)
 
     elif args.optim == "spgemm2":
+        if rank == 0:
+            print("=================Testing Spgemm Matrix-Matrix Multiplication Algorithm w/ CSR===============")
         test_spgemm(matrix_A, matrix_A_transpose, spgemm_result, kind=2)
 
     else:
