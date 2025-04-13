@@ -70,7 +70,19 @@ def santas_accounts():
     the elves helping him sell his sleighs. Get the total amount that
     Santa has made this week from all the sleighs that his elves has sold.
     """
-    raise NotImplementedError
+    random.seed(42)
+    comm = None
+    rank = None
+    if rank != 0:
+        elf_earnings = [random.uniform(1, 4) for _ in random.randint(1,10)]
+    
+    total_earned = 0
+    if rank != 0:
+        total_earned = None
+    
+    if rank == 0:
+        total = None
+        print(f"Santa has earned {total} amount of money!")
 
 def pipping_at_the_northpole():
     """
@@ -91,8 +103,7 @@ def pipping_at_the_northpole():
 
     if rank == 0:
         all_totals = None
-    
-    print(f"The elf that will be pipped is: {all_totals.index(min(all_totals))}")
+        print(f"The elf that will be pipped is: {all_totals.index(min(all_totals))}")
 
 def elf_revolution():
     """

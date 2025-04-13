@@ -112,8 +112,7 @@ def santas_accounts():
     
     if rank == 0:
         total = comm.reduce(total_earned, root=0, op=MPI.SUM)
-        
-    print(f"Santa has earned {total} amount of money!")
+        print(f"Santa has earned {total} amount of money!")
     
 
 def pipping_at_the_northpole():
@@ -135,8 +134,7 @@ def pipping_at_the_northpole():
 
     if rank == 0:
         all_totals = comm.gather(total_earned, root=0)
-    
-    print(f"The elf that will be pipped is: {all_totals.index(min(all_totals))}")
+        print(f"The elf that will be pipped is: {all_totals.index(min(all_totals))}")
 
 def elf_revolution():
     """
