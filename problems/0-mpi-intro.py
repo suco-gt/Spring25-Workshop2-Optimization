@@ -47,7 +47,15 @@ def greetings_between_all_friends():
     while they did not receive any. Make sure that processor 0 not sends
     another "Sorry" package to all other processors, including processor 1.
     """
-    raise NotImplementedError
+    comm = None
+    rank = None
+    if rank == 0:
+        data = "Sorry"
+    else:
+        data = None
+    data = None
+    if rank != 0:
+        print(f"Processor {rank} received {data} from processor 0!")
 
 def be_a_more_considerate_friend():
     """
@@ -57,12 +65,34 @@ def be_a_more_considerate_friend():
     distribute their gifts so that each friend receives only 1 gift. Help
     processor 2 distribute their gifts!
     """
-    raise NotImplementedError
+    comm = None
+    rank = None
+    if rank == 2:
+        data = [f"Gift_{i}" for i in range(comm.Get_size())]
+    else:
+        data = None
+    data = None
+    if rank != 2:
+        print(f"Processor {rank} received {data} from Processor 2!")
 
 def santas_pipeline():
     """
-    Santa operates a sleigh factory for the 
+    Santa operates a sleigh factory in the North Pole. He learnt how to operate
+    his factory most efficiently from Henry Ford, who taught him that he should
+    pipeline his operations. Therefore, each elf in the factory only works on 
+    a single part of the sleigh. To construct the final sleigh, the boss elf
+    gets a part from each elf. Guide the boss elf through their first time
+    working in the pipeline so that they could construct one sleigh!
     """
+    comm = None
+    rank = None
+    data = rank
+    if rank == 0:
+        data = None
+    if len(data) != comm.Get_size():
+        print(f"Boss elf is missing some parts! {data}")
+    else:
+        print(f"Boss elf got all the parts: {data} from {comm.Get_size()} elves!")
 
 def santas_accounts():
     """
