@@ -3,9 +3,11 @@ from mpi4py import MPI
 import numpy as np
 import argparse
 import time
+import math
 
 from solutions.bruteforce import bruteforce
 from solutions.spgemm import coo_spgemm, csr_spgemm
+from solutions.cannon import cannon_matrix_multiply
 
 def read_sparse_matrix_file(file):
     with open(file, 'r') as f:
@@ -47,6 +49,16 @@ def convert_to_matrix(num_nodes, edge_list):
         square_matrix[row][col] = w
     return square_matrix
 
+
+def pad_matrix(matrix, q):
+    # Used when a matrix needs to be divisible into blocks, so n should be a multiple of sqrt(p)
+    n, m = matrix.shape
+    if n % q == 0:
+        return matrix
+    new_n = int(math.ceil(n / q)) * q
+    padded_matrix = np.pad(matrix, ((0, new_n - n), (0, new_n - m)), mode='constant', constant_values=0)
+    return padded_matrix
+
 def distribute_matrix(matrix):
     raise NotImplementedError
 
@@ -86,8 +98,21 @@ def test_brute(num_nodes, A, B, expected_C):
 def test_tiling():
     pass
 
-def test_cannon():
-    pass
+def test_cannon(A, B, expected_C):
+    start = time.perf_counter()
+    
+    if rank == 0:
+        N = A.shape[0]
+        print(str(N) + "\n")
+    else:
+        N = None
+    N = comm.bcast(N, root=0)
+    my_C = cannon_matrix_multiply(A, B, N)
+    end = time.perf_counter()
+    if rank == 0 and np.array_equal(my_C, expected_C):
+        print("Resulting matrices match!")
+    if rank == 0:
+        print(f"Time Taken for multiplying matrices of size ({num_nodes} x {num_nodes}): {end - start:0.4f} seconds")
 
 def test_spgemm(A, B, expected_C, kind=1):
     if rank == 0:
@@ -153,8 +178,15 @@ if __name__=="__main__":
         pass
 
     elif args.optim == "cannon":
-        pass
-
+        if rank != 0:
+            square_matrix_A = None
+            square_matrix_A_transpose = None
+            square_spgemm_result = None
+        else:
+            square_matrix_A = pad_matrix(square_matrix_A, int(np.sqrt(size)))
+            square_matrix_A_transpose = pad_matrix(square_matrix_A_transpose, int(np.sqrt(size)))
+            square_spgemm_result = pad_matrix(square_spgemm_result, int(np.sqrt(size)))
+        test_cannon(square_matrix_A, square_matrix_A_transpose, square_spgemm_result)
     elif args.optim == "spgemm1":
         test_spgemm(matrix_A, matrix_A_transpose, spgemm_result, kind=1)
 
