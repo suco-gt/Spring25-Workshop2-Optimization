@@ -136,7 +136,8 @@ def elf_revolution():
     random.seed(42)
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
-    elf_earnings = [random.uniform(1, 4) for _ in random.randint(1,10)] 
+    elf_earnings = [random.uniform(1, 4) for _ in random.randint(1,10)]
+    elf_earnings = sum(elf_earnings)
     all_totals = comm.allreduce(elf_earnings, op=MPI.SUM)
     print(f"Elf {rank} has {all_totals} amount of money! Viva la revolution!")
 

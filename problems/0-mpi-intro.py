@@ -1,5 +1,6 @@
 import mpi4py
 from mpi4py import MPI
+import random
 
 """
 All functions that will be used are contained within the documentation for mpi4py:
@@ -31,7 +32,14 @@ def greetings_between_friends():
     requested a "Hello World" package from rank 0. Help processor 0 send
     their gift to rank 1 and ensure that rank 1 receives it!
     """
-    raise NotImplementedError
+    comm = None
+    rank = None
+    if rank == 0:
+        pass
+    elif rank == 1:
+        data = None
+        print(f"Processor {rank} received gift {data}!")
+        pass
 
 def greetings_between_all_friends():
     """
@@ -81,4 +89,19 @@ def elf_revolution():
     and make sure that each elf has access to the same amount of money to
     help with their revolution. 
     """
-    raise NotImplementedError
+    random.seed(42)
+    comm = None
+    rank = None
+    elf_earnings = [random.uniform(1, 4) for _ in random.randint(1,10)] 
+    all_totals = None
+    print(f"Elf {rank} has {all_totals} amount of money! Viva la revolution!")
+
+if __name__=="__main__":
+    learn_about_the_world()
+    greetings_between_friends()
+    greetings_between_all_friends()
+    be_a_more_considerate_friend()
+    santas_pipeline()
+    santas_accounts()
+    pipping_at_the_northpole()
+    elf_revolution()
