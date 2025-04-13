@@ -5,10 +5,15 @@ import argparse
 import time
 import math
 
-from solutions.bruteforce import bruteforce
-from solutions.spgemm import coo_spgemm, csr_spgemm
-from solutions.cannon import cannon_matrix_multiply
-from solutions.blocked import blocked_matrix_multiply
+# from solutions.bruteforce import bruteforce
+# from solutions.spgemm import coo_spgemm, csr_spgemm
+# from solutions.cannon import cannon_matrix_multiply
+# from solutions.blocked import blocked_matrix_multiply
+
+from problems.bruteforce import bruteforce
+from problems.spgemm import coo_spgemm, csr_spgemm
+from problems.cannon import cannon_matrix_multiply
+from problems.blocked import blocked_matrix_multiply
 
 def read_sparse_matrix_file(file):
     with open(file, 'r') as f:
