@@ -4,8 +4,8 @@ import numpy as np
 import argparse
 import time
 
-from problems.bruteforce import bruteforce
-from problems.spgemm import coo_spgemm, csr_spgemm
+from solutions.bruteforce import bruteforce
+from solutions.spgemm import coo_spgemm, csr_spgemm
 
 def read_sparse_matrix_file(file):
     with open(file, 'r') as f:
