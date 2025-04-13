@@ -40,14 +40,14 @@ def cannon_matrix_multiply(A, B, N):
     cart_rank = comm_cart.Get_rank()
     coords = comm_cart.Get_coords(cart_rank)
 
-    # Scatter blocks of A and B
+    # Create blocks of A and B
     if cart_rank == 0:
         A_blocks = np.empty((size, block_size, block_size), dtype=A.dtype)
         B_blocks = np.empty((size, block_size, block_size), dtype=B.dtype)
         idx = 0
         for i in range(q):
             for j in range(q):
-                # These 2 lines create the blocks and ensure each block is contiguous so that they can be scattered
+                # These 2 lines create the blocks and ensure each block is contiguous so that they can be distributed
                 A_blocks[idx] = np.ascontiguousarray(A[i*block_size:(i+1)*block_size, j*block_size:(j+1)*block_size])
                 B_blocks[idx] = np.ascontiguousarray(B[i*block_size:(i+1)*block_size, j*block_size:(j+1)*block_size])
                 idx += 1
@@ -55,56 +55,58 @@ def cannon_matrix_multiply(A, B, N):
         A_blocks = None
         B_blocks = None
 
-    comm_cart.Scatter(A_blocks, local_A, root=0)
-    comm_cart.Scatter(B_blocks, local_B, root=0)
+    # TODO: Distribute the blocks of A and B to all other processes.
+    # This requires 1 MPI instruction for the A blocks and 1 MPI instruction for the B blocks
+
+
+
 
     # These first 2 loops are to move the blocks to their starting positions 
-    # First, shift blocks of A to the left. The shift equals the row coordinate. The farther down the row is, the more it is shifted left.
-    for step in range(coords[0]):
-        # Destination: left neighbor (same row, column-1 mod q)
-        # Source: right neighbor (same row, column+1 mod q)
-        left_coords = (coords[0], (coords[1] - 1) % q)
-        right_coords = (coords[0], (coords[1] + 1) % q)
+    # First, shift blocks of A to the left.
+    # Hint for below: coords[0] is the row coordinate, coords[1] is the column coordinate
+    for step in range(0):
+        left_coords = (0, 0) # TODO: Calculate the coordinates of the left neighbor (to send to).
+        right_coords = (0, 0) # TODO: Calculate the coordinates of the right neighbor (to receive from).
         left_rank = comm_cart.Get_cart_rank(left_coords)
         right_rank = comm_cart.Get_cart_rank(right_coords)
         comm_cart.Sendrecv_replace(local_A, dest=left_rank, sendtag=0, source=right_rank, recvtag=0)
     
-    # Second, shift blocks of B up. The shift equals the column coordinate. The farther to the right the column is, the more it is shifted up.
-    for step in range(coords[1]):
-        # Destination: up neighbor (row-1 mod q, same column)
-        # Source: down neighbor (row+1 mod q, same column)
-        up_coords = ((coords[0] - 1) % q, coords[1])
-        down_coords = ((coords[0] + 1) % q, coords[1])
+    # Second, shift blocks of B up.
+    for step in range(0):
+        up_coords = (0, 0) # TODO: Calculate the coordinates of the upper neighbor (to send to).
+        down_coords = (0, 0) # TODO: Calculate the coordinates of the lower neighbor (to receive from).
         up_rank = comm_cart.Get_cart_rank(up_coords)
         down_rank = comm_cart.Get_cart_rank(down_coords)
         comm_cart.Sendrecv_replace(local_B, dest=up_rank, sendtag=1, source=down_rank, recvtag=1)
 
     # With the blocks shifted, the matrix multiplication can now proceed.
     # np.dot(A, B) performs the matrix multiplication for the blocks that are possessed. The resulting values are then added to the current C.
-    for step in range(q):
+    for step in range(0):
         # Multiply and accumulate
         local_C += np.dot(local_A, local_B)
 
         # Shift the local block of A to the left.
-        left_coords = (coords[0], (coords[1] - 1) % q)
-        right_coords = (coords[0], (coords[1] + 1) % q)
+        left_coords = 0 # TODO: Calculate the coordinates of the left neighbor (to send to).
+        right_coords = 0 # TODO: Calculate the coordinates of the right neighbor (to receive from).
         left_rank = comm_cart.Get_cart_rank(left_coords)
         right_rank = comm_cart.Get_cart_rank(right_coords)
-        comm_cart.Sendrecv_replace(local_A, dest=left_rank, sendtag=2,
-                                     source=right_rank, recvtag=2)
+        comm_cart.Sendrecv_replace(local_A, dest=left_rank, sendtag=2, source=right_rank, recvtag=2)
 
         # Shift the local block of B up.
-        up_coords = ((coords[0] - 1) % q, coords[1])
-        down_coords = ((coords[0] + 1) % q, coords[1])
+        up_coords = 0 # TODO: Calculate the coordinates of the upper neighbor (to send to).
+        down_coords = 0 # TODO: Calculate the coordinates of the lower neighbor (to receive from).
         up_rank = comm_cart.Get_cart_rank(up_coords)
         down_rank = comm_cart.Get_cart_rank(down_coords)
         comm_cart.Sendrecv_replace(local_B, dest=up_rank, sendtag=3, source=down_rank, recvtag=3)
 
-    # Gather all local_C blocks back to the root process.
+    # Send all local_C blocks to the root process.
     collected_C = None
     if cart_rank == 0:
         collected_C = np.empty((size, block_size, block_size), dtype=local_C.dtype)
-    comm_cart.Gather(local_C, collected_C, root=0)
+    
+    # TODO: Add an MPI instruction to get all of the blocks back to the root (process 0).
+
+
 
     # Process 0 combines all of the block of C into 1 result matrix.
     if cart_rank == 0:

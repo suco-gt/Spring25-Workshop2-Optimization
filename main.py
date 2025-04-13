@@ -103,14 +103,18 @@ def test_cannon(A, B, expected_C):
     
     if rank == 0:
         N = A.shape[0]
-        print(str(N) + "\n")
     else:
         N = None
     N = comm.bcast(N, root=0)
     my_C = cannon_matrix_multiply(A, B, N)
+
     end = time.perf_counter()
-    if rank == 0 and np.array_equal(my_C, expected_C):
-        print("Resulting matrices match!")
+
+    if rank == 0:
+        if np.array_equal(my_C, expected_C):
+            print("Result matrix matches!")
+        else:
+            print("Result matrix does not match.")
     if rank == 0:
         print(f"Time Taken for multiplying matrices of size ({num_nodes} x {num_nodes}): {end - start:0.4f} seconds")
 
