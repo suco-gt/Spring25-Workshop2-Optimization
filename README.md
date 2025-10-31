@@ -6,18 +6,18 @@ Repository containing materials for the Spring 2025 workshop 2 on matrix multipl
 
 1. Clone repository to working environment. 
 2. `cd` into the directory and run `chmod +x *.sh`.
-3. Run `./get_nodes.sh [num_nodes]` to allocate nodes on the cluster for 1 hour. Default `num_nodes` is 4. 
+3. Run `./get_nodes.sh [num_nodes]` to allocate nodes on the cluster for 3 hours. Default `num_nodes` is 4. Allocate more cores to test some of the larger matrices!
 4. `module load anaconda3`
 5. Install conda environment: `conda create --name sp25_suco2 -c conda-forge python=3.11 numpy openmpi mpi4py -y`
 6. `conda activate sp25_suco2`
 7. Test if mpi4py is working for you successfully by running `./run.sh test`.
 
-## (opt) Intro to MPI
+## Option 1: Testing Intro to MPI
 
 1. Fill out the file `problems/0-mpi-intro.py` to familiarize yourself with MPI4Py. There is no existing test file for the program, so as you complete each function, make sure that the printed output matches the problem description described in the comment under each function.
 2. Run the file using the command `./run.sh intro`.
 
-## Testing Matrix Multiplication Functions
+## Option 2: Testing Matrix Multiplication Functions
 
 1. The driver file that will parse the input files storing the complete information of matrices (stored in `tests/`) and run your completed optimized matrix-multiplication functions is `main.py`. 
 2. Implement the matrix-multiplication functions using the files under the directory `problems/`. The solutions are under the directory `solutions/`.
