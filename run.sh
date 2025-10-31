@@ -5,7 +5,7 @@ if [ "$1" == "test" ]; then
 fi
 
 if [ "$1" == "intro" ]; then
-    mpiexec -n "$SLURM_NTASKS_PER_NODE" python solutions/0-mpi-intro.py
+    mpiexec -n "$SLURM_NTASKS_PER_NODE" python problems/0-mpi-intro.py
 fi
 
 if [ "$1" == "brute" ]; then
