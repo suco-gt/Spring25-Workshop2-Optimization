@@ -8,7 +8,7 @@ Repository containing materials for the Spring 2025 workshop 2 on matrix multipl
 2. `cd` into the directory and run `chmod +x *.sh`.
 3. Run `./get_nodes.sh [num_nodes]` to allocate nodes on the cluster for 3 hours. Default `num_nodes` is 4. Allocate more cores to test some of the larger matrices!
 4. `module load anaconda3`
-5. Install conda environment: `conda create --name sp25_suco2 -c conda-forge python=3.11 numpy openmpi mpi4py -y`
+5. Create conda environment: `conda create --name sp25_suco2 -c conda-forge python=3.11 numpy openmpi mpi4py -y`
 6. `conda activate sp25_suco2`
 7. Test if mpi4py is working for you successfully by running `./run.sh test`.
 
