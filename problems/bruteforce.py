@@ -12,8 +12,8 @@ def bruteforce(m, h, n, A, B):
     Returns:
         C: (m x n) matrix as a 2D numpy array
     """
-    C = []
     # TODO: Implement the basic O(n^3) runtime matrix multiplication algorithm using what you already know from basic linear algebra!
+    C = None
     for i in range(m):
         for j in range(n):
             for k in range(h):

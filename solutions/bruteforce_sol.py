@@ -12,13 +12,9 @@ def bruteforce(m, h, n, A, B):
     Returns:
         C: (m x n) matrix as a numpy array
     """
-    C = []
+    C = np.empty((m, n))
     for i in range(m):
-        C_row = []
         for j in range(n):
-            temp_sum = 0
             for k in range(h):
-                temp_sum += A[i][k] * B[k][j]
-            C_row.append(temp_sum)
-        C.append(C_row)
+                C[i, j] += A[i][k] * B[k][j]
     return C
